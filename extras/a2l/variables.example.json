@@ -1,0 +1,30 @@
+{
+  // Variable list for x1-elf2a2l: which global variables of the firmware go into the A2L.
+  // Addresses and data types come from the ELF file (DWARF): PlatformIO builds with -g and
+  // without LTO (see platformio.ini in the README). The Arduino IDE builds AVR boards with LTO,
+  // which drops the debug information: then the address comes from the symbol table and the
+  // type from "type" (ignored when there is debug information). Copy and adapt.
+  "module": "MY_NANO",
+  "description": "Arduino Nano with XCP over the serial port (x1xcp_serial)",
+  "xcp": {
+    "transport": "serial",
+    "baudrate": 115200,          // as Serial.begin() in the firmware
+    "maxCto": 64,                // as X1_XCPSLAVE_MAX_CTO/DTO (library.json)
+    "maxDto": 64,
+    "timestampSize": 2,
+    "maxOdtEntrySize": 8,
+    "timeoutsMs": [500, 500, 500, 500, 500, 500, 200],
+    // the same events in the same order as kEvents in the firmware
+    "events": [
+      { "name": "10ms", "cycleMs": 10 },
+      { "name": "100ms", "cycleMs": 100 }
+    ]
+  },
+  "defaults": { "event": "100ms" },
+  "variables": [
+    { "name": "counter", "type": "uint16_t", "event": "10ms", "description": "+1 per 10 ms" },
+    { "name": "temperature", "type": "float", "event": "100ms", "unit": "degC", "format": "%5.1" },
+    { "name": "led_on", "type": "bool", "event": "10ms", "verbal": { "0": "OFF", "1": "ON" } },
+    { "name": "blink_ms", "type": "uint16_t", "parameter": true, "min": 0, "max": 5000, "unit": "ms", "description": "Blink period / 2" }
+  ]
+}

@@ -1,0 +1,11 @@
+// <cstddef> for compilers without a C++ standard library (avr-gcc), see cstdint.
+#pragma once
+#if defined(__AVR__)
+#include <stddef.h>
+namespace std {
+using ::size_t;
+using ::ptrdiff_t;
+} // namespace std
+#else
+#include_next <cstddef>
+#endif

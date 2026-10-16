@@ -1,0 +1,19 @@
+// <cstdint> for compilers without a C++ standard library (avr-gcc): the portable XCP slave of
+// XCP-Ray only needs the fixed width types. Elsewhere the real header is used.
+#pragma once
+#if defined(__AVR__)
+#include <stdint.h>
+namespace std {
+using ::int8_t;
+using ::int16_t;
+using ::int32_t;
+using ::int64_t;
+using ::uint8_t;
+using ::uint16_t;
+using ::uint32_t;
+using ::uint64_t;
+using ::uintptr_t;
+} // namespace std
+#else
+#include_next <cstdint>
+#endif

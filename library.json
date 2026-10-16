@@ -1,0 +1,48 @@
+{
+  "name": "x1xcp_serial",
+  "version": "1.0.0",
+  "description": "XCP over the serial port (USB) for Arduino (XCP-Ray): measurement (dynamic DAQ) and calibration of global variables; print output keeps working and appears in the console of the tool",
+  "keywords": [
+    "xcp",
+    "asam",
+    "measurement",
+    "calibration",
+    "daq",
+    "serial"
+  ],
+  "frameworks": [
+    "arduino"
+  ],
+  "platforms": [
+    "atmelavr"
+  ],
+  "build": {
+    "unflags": [
+      "-std=gnu++11"
+    ],
+    "flags": [
+      "-std=gnu++17",
+      "-DX1_XCPSLAVE_MAX_CTO=64",
+      "-DX1_XCPSLAVE_MAX_DTO=64",
+      "-DX1_XCPSLAVE_MAX_DAQ_LISTS=4",
+      "-DX1_XCPSLAVE_MAX_ODTS=12",
+      "-DX1_XCPSLAVE_MAX_ODT_ENTRIES=48"
+    ]
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/flmueller/x1xcp-serial.git"
+  },
+  "authors": [
+    {
+      "name": "Florian Müller"
+    }
+  ],
+  "headers": "x1xcp_serial.h",
+  "export": {
+    "exclude": [
+      "extras/scripts"
+    ]
+  }
+}
