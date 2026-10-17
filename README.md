@@ -51,6 +51,23 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
    table. Curves need the `"type"` of the values and, inside `"curve"`, of the axis; maps need
    the debug information (PlatformIO).
 
+   Optional, AVR boards with full debug information: switch LTO off with a file
+   `platform.local.txt` next to the `platform.txt` of the AVR core
+   (`~/.arduino15/packages/arduino/hardware/avr/<version>/`, on Windows
+   `%LOCALAPPDATA%\Arduino15\packages\arduino\hardware\avr\<version>\`) that repeats the
+   four flag lines of `platform.txt` without the LTO options, e.g. for core 1.8.8:
+
+   ```
+   compiler.c.flags=-c -g -Os {compiler.warning_flags} -std=gnu11 -ffunction-sections -fdata-sections -MMD
+   compiler.c.elf.flags={compiler.warning_flags} -Os -g -Wl,--gc-sections
+   compiler.S.flags=-c -g -x assembler-with-cpp -MMD
+   compiler.cpp.flags=-c -g -Os {compiler.warning_flags} -std=gnu++11 -fpermissive -fno-exceptions -ffunction-sections -fdata-sections -fno-threadsafe-statics -Wno-error=narrowing -MMD
+   ```
+
+   Restart the IDE. Then no `"type"` is needed and maps work too. It applies to all sketches of
+   that core, the firmware gets about 2 KB larger, and after an update of the core the file has
+   to be made again in the new version folder.
+
    **PlatformIO:** copy `extras/scripts/x1_a2l.py` into `scripts/` of the project, `x1-elf2a2l`
    into `tools/` (or set `X1_ELF2A2L`), and add to `platformio.ini`:
 
