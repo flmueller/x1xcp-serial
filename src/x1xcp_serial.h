@@ -1,7 +1,7 @@
 #pragma once
 
-// x1xcp_serial: XCP over the serial port for Arduino (XCP-Ray, REQ-FW-011), e.g. an Arduino Nano
-// on its USB serial adapter. Measurement (dynamic DAQ) and calibration of global variables;
+// x1xcp_serial: XCP over the serial port for Arduino (XCP-Ray, REQ-FW-011, REQ-FW-014), e.g. an
+// Arduino Nano on its USB serial adapter, a Raspberry Pi Pico or an STM32 board on its USB port. Measurement (dynamic DAQ) and calibration of global variables;
 // Serial.print() keeps working: XCP packets travel as frames between the text (COBS + CRC16, see
 // serial_frame.hpp), the console of XCP-Ray shows the text and sends typed lines back.
 //

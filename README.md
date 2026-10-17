@@ -1,7 +1,8 @@
-# x1xcp_serial – XCP over the serial port (USB) for Arduino AVR boards
+# x1xcp_serial – XCP over the serial port (USB) for Arduino AVR, Raspberry Pi Pico and STM32 boards
 
 Adds measurement (dynamic DAQ) and calibration of global variables to an Arduino firmware over
-its USB serial port, for XCP-Ray. `Serial.print()` keeps working: XCP packets travel as frames
+its USB serial port, for XCP-Ray: Arduino AVR boards (Nano, Uno, Mega), the Raspberry Pi Pico
+(RP2040, RP2350) and STM32 boards (e.g. Black Pill, Nucleo). `Serial.print()` keeps working: XCP packets travel as frames
 between the text, XCP-Ray shows the text in the console of the ECU and sends typed lines back.
 The A2L file is generated from the ELF file after every build: addresses and data types from the
 debug information, the selection, units and scaling from a short variable list.
@@ -10,6 +11,11 @@ Tested: Arduino Nano clone (ATmega328P, 16 MHz, CH340, Optiboot), PlatformIO (at
 avr-gcc 7.3), 115200 baud: 14 signals in three rasters (10 ms, 100 ms, 500 ms) for 30 s without
 loss, calibration, console in both directions. Other AVR boards should work (Uno, Mega 2560),
 but are untested.
+
+Also tested: Raspberry Pi Pico (RP2040, core arduino-pico by Earle Philhower) and Black Pill
+(STM32F411CE, STM32duino), each on its own USB port: 16 signals in three rasters for 30 s without
+loss, calibration, curve and map, console in both directions. The Pico 2 (RP2350) and Nucleo
+boards (ST-LINK virtual COM port) are built, but untested.
 
 Part of the free kits of XCP-Ray, a measurement and calibration tool. The library is MIT
 licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but not open source.
@@ -51,6 +57,11 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
    table. Curves need the `"type"` of the values and, inside `"curve"`, of the axis; maps need
    the debug information (PlatformIO).
 
+   **Raspberry Pi Pico** (core "Raspberry Pi Pico/RP2040/RP2350" by Earle Philhower): the IDE
+   builds with debug information, no `"type"` needed. **STM32** (core "STM32 MCU based boards",
+   STM32duino): choose Tools > Debug symbols and core logs > "Symbols Enabled (-g)" and an
+   optimization without LTO (the default "Smallest (-Os default)"); then no `"type"` is needed.
+
    Optional, AVR boards with full debug information: switch LTO off with a file
    `platform.local.txt` next to the `platform.txt` of the AVR core
    (`~/.arduino15/packages/arduino/hardware/avr/<version>/`, on Windows
@@ -85,7 +96,9 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
 
 3. **Variable list:** copy `extras/a2l/variables.example.json` to `variables.json` (Arduino IDE: next to the sketch; PlatformIO: `a2l/variables.json`) and list the
    variables to measure (`"event"`) and to calibrate (`"parameter": true`), with units, scaling
-   and texts. `"baudrate"` and `"events"` must match the firmware (step 4).
+   and texts. `"baudrate"` and `"events"` must match the firmware (step 4). On the USB port of a
+   Pico or an STM32 board the baud rate does not matter for the transfer; XCP-Ray uses it for the
+   load limit of the line, so give e.g. `1000000`.
 
    **Characteristic curves** (y over x, edited as a graph in XCP-Ray): two global arrays of the
    same length, the axis points (ascending) and the values, e.g.
@@ -148,14 +161,15 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
    - Lines typed into the console of the tool arrive through `x1xcp::console()` (a `Stream`:
      `available()`, `read()`); do not read `Serial` directly, it would take the XCP commands.
    - Variables must be **global** (or `static` at file scope) and should be **`volatile`**.
-     Parameters must not be `const` (those can lie in flash). Program memory (`PROGMEM`) can be
-     measured (read only) at its flash address.
+     Parameters must not be `const` (those can lie in flash). Program memory (`PROGMEM`, on ARM
+     `const` data) can be measured (read only) at its flash address.
    - `x1xcp::stats()` gives the connection state and counters.
 
 5. **Build and flash:** `pio run -t upload` (the tool must not hold the port: Disconnect in
    XCP-Ray releases it). Then in XCP-Ray: Devices > Add ECU, the A2L, transport
-   "XCP on serial", the port (e.g. `/dev/ttyUSB0`; the baud rate comes from the A2L). View >
-   Console shows the text of the ECU.
+   "XCP on serial", the port (e.g. `/dev/ttyUSB0`, a Pico or Black Pill `/dev/ttyACM0` or
+   `COM5`; the baud rate comes from the A2L). View > Console shows the text of the ECU. A Pico
+   or an STM32 board does not restart when the port opens: set the reset delay to 0.
 
 ## Technical data
 
@@ -169,9 +183,14 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
   measurement and refuses it above the limit (80 % by default). Example: 10 signals of 2–4 bytes
   every 10 ms ≈ 20 %. 250000, 500000 or 1000000 baud are exact on a 16 MHz AVR.
 - Opening the port resets many Nanos (DTR). XCP-Ray waits 2 s after opening (reset delay in
-  the ECU settings; 0 for boards without reset).
-- Addresses: as in the ELF file, data memory at `0x800000` + RAM address.
+  the ECU settings; 0 for boards without reset, e.g. Pico and STM32).
+- Addresses: as in the ELF file; AVR: data memory at `0x800000` + RAM address. Pico and STM32:
+  the library reads and writes the RAM and reads the firmware image in flash; other addresses
+  are refused (`ERR_ACCESS_DENIED`) instead of faulting the CPU.
+- Pico and STM32 over USB: XCP-Ray asserts DTR when it opens the port (the Pico only sends
+  while DTR is set). Upload in PlatformIO: the Pico by itself after the first time (BOOTSEL),
+  STM32 boards through DFU or an ST-LINK.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Version 1.0.0.
+MIT, see [LICENSE](LICENSE). Version 1.1.0.

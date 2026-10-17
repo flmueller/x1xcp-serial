@@ -7,6 +7,15 @@
 
 #if defined(__AVR__)
 #include <avr/pgmspace.h>
+#elif defined(ARDUINO_ARCH_RP2040) && !defined(ARDUINO_ARCH_MBED)
+// arduino-pico (RP2040, RP2350): the end of the RAM and the image in flash, from its linker script
+extern "C" char __StackTop[], __flash_binary_start[], __flash_binary_end[];
+#define X1XCP_ARM_CHECKED 1
+#elif defined(ARDUINO_ARCH_STM32)
+// STM32duino: start of the variables, end of the RAM, vector table and initial data in flash
+extern "C" char _sdata[], _edata[], _sidata[], _estack[];
+extern "C" const uint32_t g_pfnVectors[];
+#define X1XCP_ARM_CHECKED 1
 #endif
 
 #include <string.h>
@@ -29,8 +38,35 @@ constexpr uint8_t kInputSize = 32; // text from the console not read yet
 
 /// XCP addresses = addresses of the ELF file. AVR: data memory at 0x800000 + RAM address
 /// (read/write), program memory at its flash address (read only, e.g. PROGMEM tables).
+/// RP2040/RP2350 and STM32: the RAM (read/write) and the firmware image in flash (read only, e.g.
+/// const tables); any other address is refused instead of faulting the CPU.
 class Memory final : public IMemory {
 public:
+#if defined(X1XCP_ARM_CHECKED)
+    static bool inside(uint32_t address, size_t size, uintptr_t begin, uintptr_t end)
+    {
+        return address >= begin && address <= end && size <= end - address;
+    }
+    static bool inRam(uint32_t address, size_t size)
+    {
+#if defined(ARDUINO_ARCH_STM32)
+        return inside(address, size, reinterpret_cast<uintptr_t>(_sdata), reinterpret_cast<uintptr_t>(_estack));
+#else
+        return inside(address, size, 0x20000000u, reinterpret_cast<uintptr_t>(__StackTop));
+#endif
+    }
+    static bool inFlash(uint32_t address, size_t size)
+    {
+#if defined(ARDUINO_ARCH_STM32)
+        return inside(address, size, reinterpret_cast<uintptr_t>(g_pfnVectors),
+                      reinterpret_cast<uintptr_t>(_sidata) + static_cast<uintptr_t>(_edata - _sdata));
+#else
+        return inside(address, size, reinterpret_cast<uintptr_t>(__flash_binary_start),
+                      reinterpret_cast<uintptr_t>(__flash_binary_end));
+#endif
+    }
+#endif
+
     bool read(uint32_t address, uint8_t* out, size_t size) override
     {
 #if defined(__AVR__)
@@ -50,6 +86,11 @@ public:
         }
         return false;
 #else
+#if defined(X1XCP_ARM_CHECKED)
+        if (!inRam(address, size) && !inFlash(address, size)) {
+            return false;
+        }
+#endif
         memcpy(out, reinterpret_cast<const void*>(static_cast<uintptr_t>(address)), size);
         return true;
 #endif
@@ -62,6 +103,11 @@ public:
         }
         memcpy(reinterpret_cast<void*>(static_cast<uintptr_t>(address - kData)), data, size);
 #else
+#if defined(X1XCP_ARM_CHECKED)
+        if (!inRam(address, size)) {
+            return false;
+        }
+#endif
         memcpy(reinterpret_cast<void*>(static_cast<uintptr_t>(address)), data, size);
 #endif
         return true;
