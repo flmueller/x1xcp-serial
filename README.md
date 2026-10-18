@@ -18,7 +18,8 @@ loss, calibration, curve and map, console in both directions. The Pico 2 (RP2350
 boards (ST-LINK virtual COM port) are built, but untested.
 
 Part of the free kits of XCP-Ray, a measurement and calibration tool. The library is MIT
-licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but not open source.
+licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are not open source, and free for makers,
+students and personal use (public beta: free for everyone).
 
 ## Installation
 
