@@ -187,10 +187,15 @@ licensed; XCP-Ray itself and its A2L generator `x1-elf2a2l` are free to use, but
 - Addresses: as in the ELF file; AVR: data memory at `0x800000` + RAM address. Pico and STM32:
   the library reads and writes the RAM and reads the firmware image in flash; other addresses
   are refused (`ERR_ACCESS_DENIED`) instead of faulting the CPU.
+- Pico and STM32 over USB: the library writes each frame in one call (the USB serial port of the
+  Pico sends a packet per call). Through the arduino-pico core the Pico sends about 0.4 MB/s
+  (transmit buffer of 256 bytes): e.g. 77 int16 signals every 1 ms plus 60 signals every 10 ms
+  without loss in a test with 176 signals; larger DAQ tables with
+  `-DX1_XCPSLAVE_MAX_*`.
 - Pico and STM32 over USB: XCP-Ray asserts DTR when it opens the port (the Pico only sends
   while DTR is set). Upload in PlatformIO: the Pico by itself after the first time (BOOTSEL),
   STM32 boards through DFU or an ST-LINK.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Version 1.1.0.
+MIT, see [LICENSE](LICENSE). Version 1.1.1.

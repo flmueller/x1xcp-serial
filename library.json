@@ -1,6 +1,6 @@
 {
   "name": "x1xcp_serial",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "XCP over the serial port (USB) for Arduino AVR, Raspberry Pi Pico (RP2040, RP2350) and STM32 boards (XCP-Ray): measurement (dynamic DAQ) and calibration of global variables; print output keeps working and appears in the console of the tool",
   "keywords": [
     "xcp",

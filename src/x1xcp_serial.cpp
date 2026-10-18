@@ -120,9 +120,22 @@ private:
 /// Packets as frames on the serial port.
 class Link final : public IDtoTransmitter {
 public:
+    /// One write per frame: USB serial ports (Pico, STM32) send a packet per write call, byte by
+    /// byte would limit them to a few KB/s. AVR: byte by byte into the buffer of Serial (saves the
+    /// RAM of a frame).
     void send(const uint8_t* packet, size_t size)
     {
+#if defined(__AVR__)
         encodeFrame(packet, size, [this](uint8_t b) { port->write(b); });
+#else
+        size_t n = 0;
+        encodeFrame(packet, size, [this, &n](uint8_t b) {
+            if (n < sizeof frame_) {
+                frame_[n++] = b;
+            }
+        });
+        port->write(frame_, n);
+#endif
     }
     bool transmitDto(const uint8_t* packet, size_t size) override
     {
@@ -133,6 +146,11 @@ public:
 
     Stream* port = nullptr;
     uint32_t dtos = 0;
+
+#if !defined(__AVR__)
+private:
+    uint8_t frame_[maxFrameSize(XcpSlave::kMaxCto > XcpSlave::kMaxDto ? XcpSlave::kMaxCto : XcpSlave::kMaxDto)];
+#endif
 };
 
 /// Text typed into the tool's console (ring buffer); writes go to the port.
